@@ -61,13 +61,64 @@
 
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #198754; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- STYLING KHUSUS CETAK PDF / PRINT --- */
+        @media print {
+            /* Sembunyikan elemen yang tidak perlu di PDF */
+            #authBtn, 
+            #btnAutoAssess, 
+            #btnSubmit, 
+            button[onclick="resetFormCustom()"], /* Tombol Hapus Baris */
+            #btnPrint, 
+            #toastContainer, 
+            .guide-card, /* Sembunyikan tabel panduan di kanan */
+            #aiInfoBanner,
+            iframe {
+                display: none !important;
+            }
+
+            /* Bersihkan background jadi putih polos */
+            body {
+                background-image: none !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+
+            /* Hilangkan efek glass & border form */
+            .glass-card {
+                background: transparent !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            /* Buat form memenuhi lebar kertas */
+            .col-lg-7 {
+                flex: 0 0 auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* Bikin inputan terlihat seperti teks statis biasa pas diprint */
+            input, select, textarea {
+                border: 1px solid #ccc !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 20mm;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div id="toastContainer"></div>
 
-<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted) { handleFormSubmitted(); }"></iframe>
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(typeof submitted !== 'undefined' && submitted) { handleFormSubmitted(); }"></iframe>
 
 <div class="container-fluid px-4 mt-4 mb-5" style="max-width: 1450px;">
     
@@ -502,16 +553,15 @@ Respond ONLY with a raw, valid JSON object:
         }
 
         if (!success) {
-            // Logika baru biar nilai tebakannya lebih dinamis ngikutin kata kunci, nggak stuck di 9 & 4
             const textToCheck = (hazardVal + " " + consVal).toLowerCase();
-            let defExP = 3, defExS = 3, defPrP = 2, defPrS = 2; // Default baseline (9 & 4)
+            let defExP = 3, defExS = 3, defPrP = 2, defPrS = 2;
 
             if (textToCheck.includes("engine") || textToCheck.includes("fire") || textToCheck.includes("accident") || textToCheck.includes("fatal") || textToCheck.includes("crash")) {
-                defExP = 3; defExS = 5; defPrP = 2; defPrS = 4; // Severe/High
+                defExP = 3; defExS = 5; defPrP = 2; defPrS = 4;
             } else if (textToCheck.includes("permit") || textToCheck.includes("document") || textToCheck.includes("delay")) {
-                defExP = 4; defExS = 2; defPrP = 2; defPrS = 1; // Operational impact
+                defExP = 4; defExS = 2; defPrP = 2; defPrS = 1;
             } else if (textToCheck.includes("runway") || textToCheck.includes("short") || textToCheck.includes("weather") || textToCheck.includes("fatigue")) {
-                defExP = 4; defExS = 4; defPrP = 2; defPrS = 3; // High risk 16 -> 6
+                defExP = 4; defExS = 4; defPrP = 2; defPrS = 3;
             }
 
             const smartPresets = {
@@ -519,7 +569,6 @@ Respond ONLY with a raw, valid JSON object:
                     exist_p: 4, exist_s: 4, predict_p: 2, predict_s: 3, 
                     new_mitigations: "Ensure regulatory team monitors ACL/AOC application daily, Halt flight dispatch until physical approval docs are uploaded, Coordinate urgent slot extension with authority" 
                 }
-                // (Preset disederhanakan, sisa logic dihandle keyword dinamis di atas)
             };
 
             const selectedPreset = smartPresets[hazardVal] || { 
@@ -667,7 +716,6 @@ Respond ONLY with a raw, valid JSON object:
         }
     }
 
-    // Koreksi Sinkronisasi Warna Matriks 100% Sesuai Posisi Koordinat Tabel (Gambar Patokan Kiri)
     function calcRisk(type) {
         const p = parseInt(document.getElementById(type + "_p").value);
         const s = parseInt(document.getElementById(type + "_s").value);
@@ -684,7 +732,6 @@ Respond ONLY with a raw, valid JSON object:
         const score = p * s;
         psInput.value = score;
 
-        // Pemetaan Presisi Sesuai Tabel Asimetris Citilink [Severity][Probability]
         const riskMatrixColor = {
             5: { 1: 'sig', 2: 'high', 3: 'high', 4: 'severe', 5: 'severe' },
             4: { 1: 'med', 2: 'sig', 3: 'high', 4: 'high', 5: 'severe' },
